@@ -26,7 +26,7 @@ export default class UIScene extends Phaser.Scene {
     // Background
     this.add.text(12, 12, 'AGENT 404', {
       fontFamily: 'Share Tech Mono', fontSize: '10px',
-      color: '#FFB800', letterSpacing: 3,
+      color: '#C8960C', letterSpacing: 3,
     });
 
     this.add.text(12, 28, 'VITALS', {
@@ -57,7 +57,7 @@ export default class UIScene extends Phaser.Scene {
     this.roomDots = [];
     for (let i = 0; i < total; i++) {
       const x = startX - (total - 1 - i) * gap;
-      const dot = this.add.rectangle(x, 46, dotSize, dotSize, 0x222233);
+      const dot = this.add.rectangle(x, 46, dotSize, dotSize, 0x1a1208);
       dot.setOrigin(0.5);
       const lbl = this.add.text(x, 58, `${i + 1}`, {
         fontFamily: 'Share Tech Mono', fontSize: '8px',
@@ -68,7 +68,7 @@ export default class UIScene extends Phaser.Scene {
 
     // Horizontal line connecting dots
     const lineGfx = this.add.graphics();
-    lineGfx.lineStyle(1, 0x1e1e2e);
+    lineGfx.lineStyle(1, 0x1e1408);
     lineGfx.lineBetween(startX - (total - 1) * gap, 46, startX, 46);
 
     this.roomLineGfx = this.add.graphics();
@@ -92,11 +92,11 @@ export default class UIScene extends Phaser.Scene {
       if (i < index) {
         // Completed
         dot.setFillStyle(C.GREEN);
-        lbl.setColor('#00FF88');
+        lbl.setColor('#D4A520');
       } else if (i === index) {
         // Current
         dot.setFillStyle(C.AMBER);
-        lbl.setColor('#FFB800');
+        lbl.setColor('#C8960C');
         // Pulse animation
         this.tweens.add({
           targets: dot, scaleX: 1.3, scaleY: 1.3,

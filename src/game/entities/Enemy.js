@@ -9,7 +9,7 @@ const BASE_COOLDOWN = 1600;
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, patrolX1, patrolX2, isElite = false) {
     const key = isElite ? 'enemy_elite' : 'enemy';
-    super(scene, patrolX1, y, key); // Start at patrol start
+    super(scene, patrolX1, y, key);
 
     this.isElite  = isElite;
     this.hp       = isElite ? ELITE_HP : ENEMY_HP;
@@ -28,8 +28,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Circle centered at sprite origin: offset = (w/2 - r, h/2 - r)
-    this.body.setCircle(12, this.width * 0.5 - 12, this.height * 0.5 - 12);
+    // Circle hitbox at torso — 40×68 sprite, slim profile, r=7
+    this.body.setCircle(7, 13, 24);
 
     // HP bar (separate graphics, world-space)
     this.hpBarBg   = scene.add.graphics().setDepth(8);
@@ -63,6 +63,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (this.x < this.patrolX2) {
         this.body.setVelocityX(spd);
         this.setFlipX(false);
+        this._stepWalk(true);
       } else {
         this.patrolDir = -1;
       }
@@ -70,6 +71,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (this.x > this.patrolX1) {
         this.body.setVelocityX(-spd);
         this.setFlipX(true);
+        this._stepWalk(true);
       } else {
         this.patrolDir = 1;
       }
@@ -83,8 +85,10 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     // Move toward player (keep some distance)
     if (dist > 120) {
       this.body.setVelocity(Math.cos(angle) * spd, Math.sin(angle) * spd);
+      this._stepWalk(true);
     } else {
       this.body.setVelocity(0, 0);
+      this._stepWalk(false);
     }
 
     // Face player
@@ -96,13 +100,31 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  _stepWalk(moving) {
+    const dt = this.scene.game.loop.delta;
+    const base  = this.isElite ? 'enemy_elite'    : 'enemy';
+    const walkA = this.isElite ? 'enemy_elite_w1' : 'enemy_w1';
+    const walkB = this.isElite ? 'enemy_elite_w2' : 'enemy_w2';
+    const KEYS  = [base, walkA, base, walkB];
+    if (moving) {
+      this._walkT = (this._walkT || 0) + dt;
+      const newKey = KEYS[Math.floor(this._walkT / 120) % 4];
+      if (this.texture.key !== newKey) this.setTexture(newKey);
+    } else {
+      this._walkT = 0;
+      if (this.texture.key !== base) this.setTexture(base);
+    }
+  }
+
   _shoot(angle, bulletGroup) {
     this.canShoot = false;
     const spd = this.isElite ? ENEMY_BULLET_SPEED * 1.3 : ENEMY_BULLET_SPEED;
     const col = this.isElite ? 0xCC00FF : 0xFF3333;
 
-    const bx = this.x + Math.cos(angle) * 28;
-    const by = this.y + Math.sin(angle) * 28;
+    // gun tip offset: barrel at right edge of 40px sprite, ~16px from center
+    const tipDist = 16;
+    const bx = this.x + Math.cos(angle) * tipDist;
+    const by = this.y + Math.sin(angle) * tipDist;
 
     const bullet = bulletGroup.create(bx, by, 'pixel');
     bullet.setDisplaySize(14, 4);
@@ -214,7 +236,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.hpBarBg || !this.hpBarFill) return;
     const W = 36, H = 4;
     const bx = this.x - W / 2;
-    const by = this.y - 28;
+    const by = this.y - 38;
 
     this.hpBarBg.clear();
     this.hpBarBg.fillStyle(0x111111);

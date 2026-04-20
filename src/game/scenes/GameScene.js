@@ -15,7 +15,7 @@ export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
   create() {
-    this.cameras.main.setBackgroundColor(C.DARK);
+    this.cameras.main.setBackgroundColor(0x100d0a);
     this.cameras.main.fadeIn(600, 0, 0, 0);
 
     this.currentRoomIndex = 0;
@@ -204,31 +204,61 @@ export default class GameScene extends Phaser.Scene {
 
   _drawFloor() {
     const g = this.roomGfx;
-    const TILE = 64;
+    const TILE = 80;
 
-    // Warm stone checkerboard
+    // Warm near-black base
+    g.fillStyle(0x100d0a);
+    g.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    // ── Marble checkerboard — clearly visible two-tone ──
     for (let tx = 0; tx < GAME_WIDTH; tx += TILE) {
       for (let ty = 0; ty < GAME_HEIGHT; ty += TILE) {
         const alt = ((tx / TILE + ty / TILE) % 2 === 0);
-        g.fillStyle(alt ? 0x18150f : 0x1c1910);
+        // Dark tile: warm near-black; Light tile: warm dark stone — enough contrast
+        g.fillStyle(alt ? 0x181410 : 0x2a231c);
         g.fillRect(tx, ty, TILE, TILE);
 
-        // Subtle inner bevel (lighter rect 2px inset)
-        g.fillStyle(alt ? 0x1c1912 : 0x201d14, 0.5);
-        g.fillRect(tx + 2, ty + 2, TILE - 4, TILE - 4);
+        // Marble vein texture within each tile
+        const v = (tx / TILE * 3 + ty / TILE * 7) % 6;
+        if (v === 0) {
+          g.lineStyle(1, 0xC8960C, 0.18);
+          g.lineBetween(tx + 5, ty + TILE * 0.3, tx + TILE * 0.65, ty + 5);
+        } else if (v === 1) {
+          g.lineStyle(1, 0xA87828, 0.14);
+          g.lineBetween(tx + TILE * 0.25, ty + TILE - 5, tx + TILE - 5, ty + TILE * 0.35);
+        } else if (v === 2) {
+          g.lineStyle(1, 0xC8960C, 0.12);
+          g.lineBetween(tx + TILE * 0.5, ty + 5, tx + TILE - 5, ty + TILE * 0.6);
+        } else if (v === 3) {
+          // Cross-vein
+          g.lineStyle(1, 0x8B6010, 0.10);
+          g.lineBetween(tx, ty + TILE * 0.6, tx + TILE * 0.4, ty + TILE);
+        }
       }
     }
 
-    // Diagonal marble veins across whole floor (sparse, subtle)
-    g.lineStyle(1, 0x221e14, 0.25);
-    for (let i = -GAME_HEIGHT; i < GAME_WIDTH + GAME_HEIGHT; i += 128) {
-      g.lineBetween(i, 0, i + GAME_HEIGHT, GAME_HEIGHT);
-    }
-
-    // Grout lines
-    g.lineStyle(1, 0x0e0b08, 0.8);
+    // ── Grout lines (dark, visible) ──
+    g.lineStyle(2, 0x080604, 1);
     for (let x = 0; x <= GAME_WIDTH; x += TILE) g.lineBetween(x, 0, x, GAME_HEIGHT);
     for (let y = 0; y <= GAME_HEIGHT; y += TILE) g.lineBetween(0, y, GAME_WIDTH, y);
+
+    // ── Gold diamond inlay at every tile intersection ──
+    g.fillStyle(0xC8960C, 0.55);
+    for (let x = TILE; x < GAME_WIDTH; x += TILE) {
+      for (let y = TILE; y < GAME_HEIGHT; y += TILE) {
+        // Small gold diamond/cross at grout intersection
+        g.fillRect(x - 2, y - 1, 4, 2);
+        g.fillRect(x - 1, y - 2, 2, 4);
+      }
+    }
+
+    // ── Subtle warm ambient pool (hotel sconce lighting effect) ──
+    // Very faint warm light puddles near wall sconces
+    g.fillStyle(0xC8960C, 0.03);
+    for (let x = 160; x < GAME_WIDTH - 160; x += 210) {
+      g.fillCircle(x, 40, 60);
+      g.fillCircle(x, GAME_HEIGHT - 40, 60);
+    }
   }
 
   _drawWalls(index) {
@@ -237,8 +267,8 @@ export default class GameScene extends Phaser.Scene {
     const dT = DOOR_Y_TOP, dB = DOOR_Y_BOT;
     const isLast = index >= ROOM_CONFIGS.length - 1;
 
-    // ── Wall base (warm dark stone) ──
-    g.fillStyle(0x1a1610);
+    // ── Wall base — rich dark mahogany ──
+    g.fillStyle(0x1e120a);
     g.fillRect(0, 0, W, T);
     g.fillRect(0, H - T, W, T);
     if (index === 0) { g.fillRect(0, 0, T, H); }
@@ -246,49 +276,91 @@ export default class GameScene extends Phaser.Scene {
     if (isLast) { g.fillRect(W - T, 0, T, H); }
     else { g.fillRect(W - T, 0, T, dT); g.fillRect(W - T, dB, T, H - dB); }
 
-    // ── Stone block joints (horizontal lines every 32px within wall) ──
-    g.lineStyle(1, 0x0e0b08, 0.9);
-    // top wall joints
-    for (let x = 0; x < W; x += 48) g.lineBetween(x, T / 2, x + 48, T / 2);
-    for (let x = 24; x < W; x += 48) g.lineBetween(x, T, x, 0);
-    // bottom wall joints
-    for (let x = 0; x < W; x += 48) g.lineBetween(x, H - T / 2, x + 48, H - T / 2);
-    for (let x = 24; x < W; x += 48) g.lineBetween(x, H - T, x, H);
+    // ── Wood grain bands on walls ──
+    g.fillStyle(0x170d06, 0.9);
+    for (let x = T + 4; x < W - T - 4; x += 110) {
+      const pw = Math.min(102, W - T - x - 4);
+      if (pw > 20) {
+        g.fillRect(x, 3, pw, T - 6);
+        g.fillRect(x, H - T + 3, pw, T - 6);
+      }
+    }
+    // Horizontal wood grain lines
+    g.lineStyle(1, 0x140c05, 0.7);
+    for (let y = 6; y < T - 4; y += 6) {
+      g.lineBetween(T, y, W - T, y);
+      g.lineBetween(T, H - T + y, W - T, H - T + y);
+    }
 
-    // ── Amber neon inner edge strips ──
-    g.fillStyle(C.AMBER);
-    g.fillRect(0, T - 2, W, 2);
-    g.fillRect(0, H - T, W, 2);
+    // ── Warm amber glow behind gold molding (soft light halo) ──
+    g.fillStyle(0xC8960C, 0.14);
+    g.fillRect(0, T - 10, W, 10);
+    g.fillRect(0, H - T, W, 10);
+
+    // ── GOLD inner molding — thick, bright, dominant ──
+    g.fillStyle(0xC8960C);
+    g.fillRect(0, T - 3, W, 3);
+    g.fillRect(0, H - T, W, 3);
     if (index === 0) {
-      g.fillRect(T - 2, 0, 2, H);
+      g.fillRect(T - 3, 0, 3, H);
     } else {
-      g.fillRect(T - 2, 0, 2, dT);
-      g.fillRect(T - 2, dB, 2, H - dB);
+      g.fillRect(T - 3, 0, 3, dT);
+      g.fillRect(T - 3, dB, 3, H - dB);
     }
     if (isLast) {
-      g.fillRect(W - T, 0, 2, H);
+      g.fillRect(W - T, 0, 3, H);
     } else {
-      g.fillRect(W - T, 0, 2, dT);
-      g.fillRect(W - T, dB, 2, H - dB);
+      g.fillRect(W - T, 0, 3, dT);
+      g.fillRect(W - T, dB, 3, H - dB);
     }
 
-    // ── Corner bracket decorations ──
-    g.fillStyle(C.AMBER);
-    [[T, T], [W - T - 24, T], [T, H - T - 2], [W - T - 24, H - T - 2]].forEach(([cx, cy]) => {
-      g.fillRect(cx, cy, 24, 2);
-      g.fillRect(cx, cy, 2, 24);
-    });
+    // ── Secondary thin gold line (double molding) ──
+    g.fillStyle(0xC8960C, 0.45);
+    g.fillRect(0, T - 7, W, 2);
+    g.fillRect(0, H - T + 4, W, 2);
 
-    // ── Wall sconce lights (amber dots along top/bottom walls) ──
-    g.fillStyle(0xFFDD44, 0.6);
-    for (let x = 120; x < W - 120; x += 180) {
-      g.fillCircle(x, T / 2, 3);
-      g.fillCircle(x, H - T / 2, 3);
+    // ── Wall sconces — visible warm light fixtures ──
+    for (let x = 160; x < W - 160; x += 210) {
+      // Gold bracket
+      g.fillStyle(0xC8960C);
+      g.fillRect(x - 5, T - 11, 10, 8);
+      g.fillRect(x - 2, T - 14, 4, 3);
+      // Warm light glow (large soft circle)
+      g.fillStyle(0xFFEE88, 0.5);
+      g.fillCircle(x, T - 8, 7);
+      g.fillStyle(0xFFDD66, 0.2);
+      g.fillCircle(x, T - 8, 14);
+      // Bottom sconces
+      g.fillStyle(0xC8960C);
+      g.fillRect(x - 5, H - T + 3, 10, 8);
+      g.fillRect(x - 2, H - T + 11, 4, 3);
+      g.fillStyle(0xFFEE88, 0.5);
+      g.fillCircle(x, H - T + 7, 7);
+      g.fillStyle(0xFFDD66, 0.2);
+      g.fillCircle(x, H - T + 7, 14);
     }
-    g.fillStyle(0xFFDD44, 0.15);
-    for (let x = 120; x < W - 120; x += 180) {
-      g.fillCircle(x, T / 2, 8);
-      g.fillCircle(x, H - T / 2, 8);
+
+    // ── Gold corner ornaments (prominent L-brackets) ──
+    g.fillStyle(0xC8960C);
+    // Top-left
+    g.fillRect(T, T - 3, 48, 3); g.fillRect(T - 3, T, 3, 48);
+    // Corner dot
+    g.fillRect(T - 3, T - 3, 6, 6);
+    // Top-right
+    g.fillRect(W - T - 48, T - 3, 48, 3); g.fillRect(W - T, T, 3, 48);
+    g.fillRect(W - T, T - 3, 6, 6);
+    // Bottom-left
+    g.fillRect(T, H - T, 48, 3); g.fillRect(T - 3, H - T - 48, 3, 48);
+    g.fillRect(T - 3, H - T, 6, 6);
+    // Bottom-right
+    g.fillRect(W - T - 48, H - T, 48, 3); g.fillRect(W - T, H - T - 48, 3, 48);
+    g.fillRect(W - T, H - T, 6, 6);
+
+    // ── Gold panel dividers (visible vertical lines) ──
+    g.fillStyle(0xC8960C, 0.35);
+    for (let x = T + 110; x < W - T; x += 110) {
+      g.fillRect(x, 0, 1, T);
+      g.fillRect(x, H - T, 1, T);
     }
   }
 
@@ -348,51 +420,58 @@ export default class GameScene extends Phaser.Scene {
     const g = this.decorGfx;
     const { x, y, w, h } = o;
 
-    // Shadow
-    g.fillStyle(0x000000, 0.35);
+    // Drop shadow
+    g.fillStyle(0x000000, 0.45);
     g.fillRect(x + 4, y + 4, w, h);
 
-    // Wood base
-    g.fillStyle(0x1a1510);
+    // Dark mahogany wood base
+    g.fillStyle(0x1a0e08);
     g.fillRect(x, y, w, h);
 
-    // Wood grain planks (vertical for wide, horizontal for tall)
-    g.lineStyle(1, 0x130f0c, 0.9);
+    // Inset panel (slightly darker center)
+    g.fillStyle(0x120a04);
+    g.fillRect(x + 5, y + 5, w - 10, h - 10);
+
+    // Wood grain bands
+    g.fillStyle(0x140c06, 0.85);
+    const step = w >= h
+      ? Math.max(20, Math.floor(w / Math.max(2, Math.floor(w / 32))))
+      : Math.max(20, Math.floor(h / Math.max(2, Math.floor(h / 32))));
     if (w >= h) {
-      // wide crate — vertical plank lines
-      const step = Math.max(16, Math.floor(w / 4));
-      for (let i = step; i < w; i += step) g.lineBetween(x + i, y + 1, x + i, y + h - 1);
+      for (let i = step; i < w; i += step) {
+        g.fillRect(x + i, y + 1, 1, h - 2);
+        if (i + 2 < w) g.fillRect(x + i + 2, y + 1, 1, h - 2);
+      }
     } else {
-      // tall crate — horizontal plank lines
-      const step = Math.max(16, Math.floor(h / 4));
-      for (let i = step; i < h; i += step) g.lineBetween(x + 1, y + i, x + w - 1, y + i);
+      for (let i = step; i < h; i += step) {
+        g.fillRect(x + 1, y + i, w - 2, 1);
+        if (i + 2 < h) g.fillRect(x + 1, y + i + 2, w - 2, 1);
+      }
     }
 
-    // Metal bands
-    g.fillStyle(0x252018);
-    g.fillRect(x, y, w, 4);
-    g.fillRect(x, y + h - 4, w, 4);
-    if (h > 60) g.fillRect(x, y + h / 2 - 2, w, 4);
+    // Gold trim strips (top + bottom edge)
+    g.fillStyle(0xC8960C);
+    g.fillRect(x, y, w, 2);
+    g.fillRect(x, y + h - 2, w, 2);
 
-    // X marking on top (Indiana Jones crate)
-    g.lineStyle(1, 0x2a241c, 0.7);
-    const pad = 8;
-    g.lineBetween(x + pad, y + pad, x + w - pad, y + h - pad);
-    g.lineBetween(x + w - pad, y + pad, x + pad, y + h - pad);
+    // Gold corner brackets
+    const bs = 10;
+    g.fillStyle(0xC8960C);
+    g.fillRect(x, y, bs, 2);          g.fillRect(x, y, 2, bs);
+    g.fillRect(x + w - bs, y, bs, 2); g.fillRect(x + w - 2, y, 2, bs);
+    g.fillRect(x, y + h - 2, bs, 2);  g.fillRect(x, y + h - bs, 2, bs);
+    g.fillRect(x + w - bs, y + h - 2, bs, 2); g.fillRect(x + w - 2, y + h - bs, 2, bs);
 
-    // Amber corner brackets
-    const bs = 7;
-    g.fillStyle(0x806020);
-    [[x, y], [x + w - bs, y], [x, y + h - 2], [x + w - bs, y + h - 2]].forEach(([bx, by]) => {
-      g.fillRect(bx, by, bs, 2);
-    });
-    [[x, y], [x + w - 2, y], [x, y + h - bs], [x + w - 2, y + h - bs]].forEach(([bx, by]) => {
-      g.fillRect(bx, by, 2, bs);
-    });
+    // Gold center handle
+    const hx = x + w / 2, hy = y + h / 2;
+    g.fillStyle(0xC8960C, 0.75);
+    g.fillRect(hx - 7, hy - 2, 14, 4);
+    g.fillStyle(0xFFDD88, 0.9);
+    g.fillCircle(hx, hy, 3);
 
-    // Top amber glow strip
-    g.fillStyle(0x604818, 0.9);
-    g.fillRect(x, y, w, 1);
+    // Warm glow hint at top edge
+    g.fillStyle(0xC8960C, 0.07);
+    g.fillRect(x, y, w, 5);
   }
 
   _addLockedDoor() {
@@ -400,7 +479,7 @@ export default class GameScene extends Phaser.Scene {
     const g = this.roomGfx;
 
     // Visual
-    g.fillStyle(0x2a0000);
+    g.fillStyle(0x1a0404);
     g.fillRect(W - T, DOOR_Y_TOP, T, DOOR_HEIGHT);
     g.fillStyle(C.DOOR_LOCK, 0.4);
     g.fillRect(W - T + 2, DOOR_Y_TOP + 2, T - 4, DOOR_HEIGHT - 4);
@@ -443,7 +522,7 @@ export default class GameScene extends Phaser.Scene {
 
       const W = GAME_WIDTH, T = WALL_T;
       const g = this.roomGfx;
-      g.fillStyle(0x0f0f1a);
+      g.fillStyle(0x100c08);
       g.fillRect(W - T, DOOR_Y_TOP, T, DOOR_HEIGHT);
       g.fillStyle(C.GREEN, 0.5);
       g.fillRect(W - T, DOOR_Y_TOP, T, 2);
@@ -464,7 +543,7 @@ export default class GameScene extends Phaser.Scene {
     // Notification
     const notif = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 70,
       '◆  CLASSIFIED DATA UNLOCKED  ◆', {
-        fontFamily: 'Share Tech Mono', fontSize: '16px', color: '#FFB800',
+        fontFamily: 'Share Tech Mono', fontSize: '16px', color: '#C8960C',
         letterSpacing: 4, stroke: '#000', strokeThickness: 4,
       }
     ).setOrigin(0.5).setDepth(25).setAlpha(0);
@@ -548,7 +627,7 @@ export default class GameScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(31).setAlpha(0);
     this.retryText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40,
       '[ PRESS ANY KEY TO RETRY ]', {
-        fontFamily: 'Share Tech Mono', fontSize: '14px', color: '#FFB800', letterSpacing: 3,
+        fontFamily: 'Share Tech Mono', fontSize: '14px', color: '#C8960C', letterSpacing: 3,
       }
     ).setOrigin(0.5).setDepth(31).setAlpha(0);
   }
@@ -564,16 +643,16 @@ export default class GameScene extends Phaser.Scene {
 
       vo(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000).setDepth(40).setAlpha(0.96));
       vo(this.add.text(GAME_WIDTH / 2, 200, 'MISSION COMPLETE', {
-        fontFamily: 'Share Tech Mono', fontSize: '52px', color: '#00FF88', letterSpacing: 8, stroke: '#000', strokeThickness: 3,
+        fontFamily: 'Share Tech Mono', fontSize: '52px', color: '#C8960C', letterSpacing: 8, stroke: '#000', strokeThickness: 3,
       }).setOrigin(0.5).setDepth(41));
       vo(this.add.text(GAME_WIDTH / 2, 290, 'ALL 6 SECTORS CLEARED · AGENT 404', {
-        fontFamily: 'Share Tech Mono', fontSize: '15px', color: '#FFB800', letterSpacing: 3,
+        fontFamily: 'Share Tech Mono', fontSize: '15px', color: '#A87830', letterSpacing: 3,
       }).setOrigin(0.5).setDepth(41));
       vo(this.add.text(GAME_WIDTH / 2, 360, '"They said he didn\'t exist.  His code says otherwise."', {
-        fontFamily: 'Share Tech Mono', fontSize: '13px', color: '#555', letterSpacing: 1,
+        fontFamily: 'Share Tech Mono', fontSize: '13px', color: '#554433', letterSpacing: 1,
       }).setOrigin(0.5).setDepth(41));
       vo(this.add.text(GAME_WIDTH / 2, 460, '[ CLICK TO PLAY AGAIN ]', {
-        fontFamily: 'Share Tech Mono', fontSize: '14px', color: '#FFB800', letterSpacing: 3,
+        fontFamily: 'Share Tech Mono', fontSize: '14px', color: '#C8960C', letterSpacing: 3,
       }).setOrigin(0.5).setDepth(41));
 
       this.input.once('pointerdown', () => {
@@ -608,9 +687,9 @@ export default class GameScene extends Phaser.Scene {
 
     // Impact sparks
     const cols = type === 'wall'
-      ? [0xFFB800, 0xFFDD88, 0xFFFFFF, 0x886600]
+      ? [0xC8960C, 0xDDB870, 0xFFEEAA, 0x887040]   // gold marble chips
       : type === 'obstacle'
-        ? [0x888888, 0xAAAAAA, 0x444444]
+        ? [0x5a3010, 0x8a5020, 0xC8960C, 0x3a1c08]  // dark wood splinters + gold
         : [0xCC0000, 0xFF2222]; // enemy hit (backup)
 
     const count = type === 'wall' ? 6 : 4;
@@ -651,7 +730,7 @@ export default class GameScene extends Phaser.Scene {
 
   _showRoomNotif(name, subtitle) {
     const t1 = this.add.text(GAME_WIDTH / 2, 78, name, {
-      fontFamily: 'Share Tech Mono', fontSize: '20px', color: '#FFB800',
+      fontFamily: 'Share Tech Mono', fontSize: '20px', color: '#C8960C',
       letterSpacing: 5, stroke: '#000', strokeThickness: 3,
     }).setOrigin(0.5).setDepth(20).setAlpha(0);
     const t2 = this.add.text(GAME_WIDTH / 2, 104, subtitle, {

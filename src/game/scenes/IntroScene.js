@@ -24,53 +24,57 @@ export default class IntroScene extends Phaser.Scene {
   constructor() { super('IntroScene'); }
 
   create() {
-    this.cameras.main.setBackgroundColor(C.DARK);
+    this.cameras.main.setBackgroundColor(0x100d0a);
 
-    // Scanline overlay
+    // Subtle vignette (dark edges, warm center)
     const g = this.add.graphics();
-    for (let y = 0; y < GAME_HEIGHT; y += 4) {
-      g.fillStyle(0x000000, 0.15);
-      g.fillRect(0, y, GAME_WIDTH, 2);
-    }
+    g.fillStyle(0x000000, 0.6);
+    g.fillRect(0, 0, GAME_WIDTH, 60);
+    g.fillRect(0, GAME_HEIGHT - 60, GAME_WIDTH, 60);
+    g.fillRect(0, 0, 60, GAME_HEIGHT);
+    g.fillRect(GAME_WIDTH - 60, 0, 60, GAME_HEIGHT);
+    // Thin horizontal lines (dark, barely visible depth effect)
+    g.lineStyle(1, 0x000000, 0.08);
+    for (let y = 0; y < GAME_HEIGHT; y += 4) g.lineBetween(0, y, GAME_WIDTH, y);
     g.setDepth(10);
 
     // Corner decorations
     this._drawCorners();
 
     // Top classified banner
-    const banner = this.add.rectangle(GAME_WIDTH / 2, 28, GAME_WIDTH, 36, 0x110000);
+    const banner = this.add.rectangle(GAME_WIDTH / 2, 28, GAME_WIDTH, 36, 0x140804);
     this.add.text(GAME_WIDTH / 2, 28, '◆  TOP SECRET  ◆  CLASSIFIED  ◆  EYES ONLY  ◆', {
-      fontFamily: 'Share Tech Mono', fontSize: '11px', color: '#CC0000', letterSpacing: 3,
+      fontFamily: 'Share Tech Mono', fontSize: '11px', color: '#C8960C', letterSpacing: 3,
     }).setOrigin(0.5);
 
     // AGENT 404 title
     const title = this.add.text(GAME_WIDTH / 2, 120, 'AGENT', {
-      fontFamily: 'Share Tech Mono', fontSize: '72px', color: '#FFB800',
+      fontFamily: 'Share Tech Mono', fontSize: '72px', color: '#C8960C',
       letterSpacing: 20, stroke: '#000', strokeThickness: 4,
     }).setOrigin(0.5).setAlpha(0);
 
     const titleNum = this.add.text(GAME_WIDTH / 2, 200, '404', {
-      fontFamily: 'Share Tech Mono', fontSize: '96px', color: '#ffffff',
-      letterSpacing: 16, stroke: '#FFB800', strokeThickness: 2,
+      fontFamily: 'Share Tech Mono', fontSize: '96px', color: '#8B1020',
+      letterSpacing: 16, stroke: '#C8960C', strokeThickness: 2,
     }).setOrigin(0.5).setAlpha(0);
 
     const tagline = this.add.text(GAME_WIDTH / 2, 280, '"They said he didn\'t exist.  His code says otherwise."', {
-      fontFamily: 'Share Tech Mono', fontSize: '13px', color: '#555',
+      fontFamily: 'Share Tech Mono', fontSize: '13px', color: '#554433',
       letterSpacing: 1,
     }).setOrigin(0.5).setAlpha(0);
 
     // Briefing text box
     const boxY = 330;
-    this.add.rectangle(GAME_WIDTH / 2, boxY + 120, 700, 250, 0x0a0a12).setAlpha(0.8);
+    this.add.rectangle(GAME_WIDTH / 2, boxY + 120, 700, 250, 0x100c08).setAlpha(0.9);
     this.add.rectangle(GAME_WIDTH / 2, boxY + 120, 700, 250)
-      .setStrokeStyle(1, C.AMBER, 0.3);
+      .setStrokeStyle(1, C.AMBER, 0.4);
 
     // Briefing lines (typewriter)
     this.briefingTexts = [];
     BRIEFING_LINES.forEach((line, i) => {
       const t = this.add.text(GAME_WIDTH / 2 - 320, boxY + i * 16 + 10, '', {
         fontFamily: 'Share Tech Mono', fontSize: '12px',
-        color: line.startsWith('  ') ? '#888' : (line.includes(':') ? '#FFB800' : '#aaa'),
+        color: line.startsWith('  ') ? '#886644' : (line.includes(':') ? '#C8960C' : '#998870'),
         letterSpacing: 1,
       }).setAlpha(0);
       this.briefingTexts.push({ text: t, fullText: line });
@@ -78,7 +82,7 @@ export default class IntroScene extends Phaser.Scene {
 
     // Press Enter prompt
     this.enterPrompt = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 60, '[ PRESS ENTER OR CLICK TO DEPLOY ]', {
-      fontFamily: 'Share Tech Mono', fontSize: '14px', color: '#FFB800', letterSpacing: 3,
+      fontFamily: 'Share Tech Mono', fontSize: '14px', color: '#C8960C', letterSpacing: 3,
     }).setOrigin(0.5).setAlpha(0);
 
     // Animate in sequence
@@ -110,7 +114,7 @@ export default class IntroScene extends Phaser.Scene {
   _drawCorners() {
     const g = this.add.graphics();
     const size = 40;
-    g.lineStyle(2, C.AMBER, 0.5);
+    g.lineStyle(2, C.AMBER, 0.7);
     // Top-left
     g.lineBetween(0, size, 0, 0); g.lineBetween(0, 0, size, 0);
     // Top-right

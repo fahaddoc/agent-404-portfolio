@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { PLAYER_SPEED, BULLET_SPEED, PLAYER_MAX_HP, C } from '../config.js';
 
-// Gun tip is ~28px right of sprite center (texture: 64×40, origin 0.5,0.5)
-const GUN_TIP_DIST = 28;
+// Pistol muzzle: art x=19, center x=10 → 9 art px × 2 = 18 real px
+const GUN_TIP_DIST = 18;
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
@@ -13,17 +13,18 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.invincible = false;
     this.canShoot = true;
     this.shootCooldown = 200;
+    this._facing = 1;    // 1 = right, -1 = left
+    this._aimAngle = 0;  // radians, for bullet direction
 
-    // Pivot at exact center of 64×40 texture
+    // Pivot at exact center of 40×56 texture
     this.setOrigin(0.5, 0.5);
     this.setDepth(5);
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Circle hitbox centered at sprite origin (body center)
-    // 64/2 - 13 = 19,  40/2 - 13 = 7
-    this.body.setCircle(13, 19, 7);
+    // Circle hitbox at torso — 40×68 sprite, slim profile, r=7
+    this.body.setCircle(7, 13, 24);
     this.body.setCollideWorldBounds(true);
     this.body.setMaxVelocity(PLAYER_SPEED * 1.1, PLAYER_SPEED * 1.1);
 
@@ -34,7 +35,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   shoot(bulletGroup) {
     if (!this.canShoot || !this.alive) return;
 
-    const angle = this.rotation;
+    const angle = this._aimAngle;
 
     // Bullet spawns at gun barrel tip (28px from sprite center along aim axis)
     const bx = this.x + Math.cos(angle) * GUN_TIP_DIST;
@@ -82,23 +83,34 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
     this.body.setVelocity(vx, vy);
 
-    // ── Aim logic ──
-    // If any enemy is within AUTO_AIM_RANGE, lock onto nearest one
-    const AUTO_AIM_RANGE = 320;
+    // ── Walk animation via texture swap ──
+    const moving = vx !== 0 || vy !== 0;
+    const dt = this.scene.game.loop.delta;
+    const WALK_KEYS = ['player', 'player_w1', 'player', 'player_w2'];
+    if (moving) {
+      this._walkT = (this._walkT || 0) + dt;
+      const newKey = WALK_KEYS[Math.floor(this._walkT / 100) % 4];
+      if (this.texture.key !== newKey) this.setTexture(newKey);
+    } else {
+      this._walkT = 0;
+      if (this.texture.key !== 'player') this.setTexture('player');
+    }
+
+    // ── Aim / facing logic (side-view: use flipX, not rotation) ──
+    const AUTO_AIM_RANGE = 340;
     const nearestEnemy = this._nearestEnemy(enemies);
     const enemyDist = nearestEnemy
       ? Phaser.Math.Distance.Between(this.x, this.y, nearestEnemy.x, nearestEnemy.y)
       : Infinity;
 
-    let angle;
     if (nearestEnemy && enemyDist <= AUTO_AIM_RANGE) {
-      // Enemy nearby → auto-aim at them
-      angle = Phaser.Math.Angle.Between(this.x, this.y, nearestEnemy.x, nearestEnemy.y);
-    } else {
-      // No nearby enemy → aim at mouse
-      angle = Phaser.Math.Angle.Between(this.x, this.y, pointer.worldX, pointer.worldY);
+      this._aimAngle = Phaser.Math.Angle.Between(this.x, this.y, nearestEnemy.x, nearestEnemy.y);
+      this._facing   = nearestEnemy.x >= this.x ? 1 : -1;
+    } else if (vx !== 0 || vy !== 0) {
+      this._aimAngle = Math.atan2(vy, vx);
+      if (vx !== 0) this._facing = vx > 0 ? 1 : -1;
     }
-    this.setRotation(angle);
+    this.setFlipX(this._facing < 0);
 
     // ── Shoot on SPACE or F key ──
     if (Phaser.Input.Keyboard.JustDown(spaceKey)) {
@@ -184,6 +196,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp = PLAYER_MAX_HP;
     this.alive = true;
     this.invincible = false;
+    this._facing = 1;
+    this._aimAngle = 0;
+    this.setFlipX(false);
     this.clearTint();
     this.setAlpha(1);
     this.body.reset(x, y);

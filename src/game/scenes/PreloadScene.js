@@ -5,328 +5,175 @@ export default class PreloadScene extends Phaser.Scene {
   constructor() { super('PreloadScene'); }
 
   create() {
-    this.cameras.main.setBackgroundColor(0x080810);
+    this.cameras.main.setBackgroundColor(0x0a0805);
 
+    const S = 2;
+    const makeTex = (key, artW, artH, fn) => {
+      const tex = this.textures.createCanvas(key, artW * S, artH * S);
+      const ctx = tex.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      const p = (hex, ax, ay, aw = 1, ah = 1) => {
+        const x0 = Math.max(ax, 0), y0 = Math.max(ay, 0);
+        const rw = Math.min(aw - (x0 - ax), artW - x0);
+        const rh = Math.min(ah - (y0 - ay), artH - y0);
+        if (rw <= 0 || rh <= 0) return;
+        ctx.fillStyle = '#' + hex.toString(16).padStart(6, '0');
+        ctx.fillRect(x0 * S, y0 * S, rw * S, rh * S);
+      };
+      fn(p);
+      tex.refresh();
+    };
+
+    const HA  = 0x1a0e06; const HM  = 0x2c1a0a; const HL  = 0x402e18;
+    const SK  = 0xC8A060; const SBr = 0xDCBC78; const Ssd = 0xA07838;
+    const SU  = 0x232538; const SL  = 0x2e3048; const Sda = 0x161828;
+    const WH  = 0xE8E8D8; const PA  = 0x1a1c2e; const SHO = 0x121220;
+    const GF  = 0x252535; const GB  = 0xC89010;
+
+    // ── Side-profile John Wick: 20×34 art → 40×68 texture ──
+    const drawJW = (key, tieCol, barrelCol, aLegX, bLegX) => {
+      const BK = 0x0D0D0D;
+      const BH = 0x1C1C1C;
+
+      // Hair: dark base + reddish-brown highlights (like ref image)
+      const HK = 0x0E0602;  // near-black hair
+      const HR = 0x7A2010;  // reddish-brown highlight
+      const HM = 0x2C1008;  // mid-dark hair
+
+      // Skin
+      const SK = 0xC49060;  // base skin
+      const SS = 0x8B5030;  // skin shadow
+      const BE = 0x1A0A04;  // beard/stubble
+
+      makeTex(key, 20, 34, p => {
+        // shadow
+        p(0x000000, 1, 32, 14, 2);
+
+        // ── HAIR ── dark mass with subtle warm depth
+        p(HK, 1,  0,  8,  1);          // top hairline row
+        p(HK, 1,  1, 10,  9);          // main hair block
+        p(HM, 4,  1,  5,  2);          // subtle depth highlight — top
+        p(HM, 3,  3,  4,  2);          // subtle depth — mid
+        p(HM, 2,  5,  3,  2);          // subtle depth — lower
+        p(HK, 1,  1,  2, 10);          // very dark left-edge strip
+        p(HK, 1, 10,  6,  4);          // long strands flowing down
+        p(HM, 2, 10,  2,  2);          // subtle depth on strands
+        p(HK, 2, 14,  3,  2);          // hair tip
+
+        // ── HEAD (profile, facing right) ──
+        p(SK, 7,  1,  4,  1);          // crown skin (top of head)
+        p(SK, 7,  2,  7,  8);          // full face skin block x=7..13, y=2..9
+        p(SS, 7,  2,  1,  7);          // shadow stripe at hairline
+
+        // Eyebrow — strong, thick, dark
+        p(HK, 9,  4,  4,  1);
+
+        // Eye — single dark pixel in profile
+        p(HK,12,  5,  1,  1);
+
+        // Nose — juts right past face boundary (key profile feature)
+        p(SK,13,  6,  2,  2);          // nose bridge + tip extends to x=14
+        p(SS,13,  8,  1,  1);          // nostril shadow
+        p(HK,12,  8,  1,  1);          // nostril
+
+        // Cheek shadow
+        p(SS, 7,  6,  2,  2);
+
+        // Beard / jaw — dark stubble
+        p(BE, 7,  9,  6,  2);          // beard base on whole jaw
+        p(SK, 9,  9,  3,  1);          // skin showing through beard (mid-chin)
+        p(SK,10, 10,  1,  1);          // chin highlight
+
+        // ── NECK ──
+        p(SK, 8, 11,  3,  2);
+        p(SS, 8, 11,  1,  1);
+
+        // ── TORSO (slim coat) ──
+        p(BK, 6, 13,  7,  8);
+        p(BH, 6, 13,  1,  7);
+        p(BH,12, 13,  1,  7);
+        p(BH, 9, 13,  2,  3);          // lapel
+
+        // ── LEFT ARM (behind) ──
+        p(BK, 4, 14,  3,  6);
+        p(SK, 4, 19,  2,  1);
+
+        // ── RIGHT ARM + HAND ──
+        p(BK,11, 13,  4,  4);
+        p(SK,13, 15,  3,  2);
+
+        // ── GUN ──
+        p(BK,14, 12,  6,  3);
+        p(BH,14, 12,  6,  1);
+        p(BK,15, 15,  2,  3);
+        p(barrelCol, 19, 12, 1, 2);
+
+        // ── LEGS ──
+        p(BK, aLegX,     21,  3,  9);
+        p(BK, bLegX,     21,  3,  9);
+        p(BH, aLegX + 2, 21,  1,  8);
+        p(BH, bLegX,     21,  1,  8);
+
+        // ── SHOES ──
+        p(BK, aLegX - 1, 29,  5,  2);
+        p(BK, bLegX,     29,  4,  2);
+      });
+    };
+
+    drawJW('player',    0x0D0D0D, GB,  5,  9);
+    drawJW('player_w1', 0x0D0D0D, GB,  4,  9);
+    drawJW('player_w2', 0x0D0D0D, GB,  5, 10);
+
+    drawJW('enemy',    0x0D0D0D, 0xDD2020,  5,  9);
+    drawJW('enemy_w1', 0x0D0D0D, 0xDD2020,  4,  9);
+    drawJW('enemy_w2', 0x0D0D0D, 0xDD2020,  5, 10);
+
+    drawJW('enemy_elite',    0x0D0D0D, 0x9900CC,  5,  9);
+    drawJW('enemy_elite_w1', 0x0D0D0D, 0x9900CC,  4,  9);
+    drawJW('enemy_elite_w2', 0x0D0D0D, 0x9900CC,  5, 10);
+
+
+    /* ── non-character textures ── */
     const g = this.make.graphics({ add: false });
 
-    /* ── pixel (1×1 white) ── */
-    g.clear();
-    g.fillStyle(0xffffff);
-    g.fillRect(0, 0, 1, 1);
+    g.clear(); g.fillStyle(0xffffff); g.fillRect(0,0,1,1);
     g.generateTexture('pixel', 1, 1);
 
-    /* ════════════════════════════════════════════════════════════════
-     * PLAYER — Agent 404 / John Wick  (64 × 40, top-down)
-     * Origin: setOrigin(0.5, 0.5) → pivot = (32, 20)
-     * Faces RIGHT at rotation=0
-     * Gun tip ≈ (60, 20)  →  GUN_TIP_DIST = 28
-     * ════════════════════════════════════════════════════════════════ */
     g.clear();
-
-    // ── drop shadow ──
-    g.fillStyle(0x000000, 0.45);
-    g.fillEllipse(27, 26, 44, 16);
-
-    // ── suit body (charcoal) ──
-    g.fillStyle(0x1c1c26);
-    g.fillEllipse(20, 20, 34, 30);
-
-    // ── jacket inner shading ──
-    g.fillStyle(0x14141c);
-    g.fillEllipse(18, 20, 22, 22);
-
-    // ── left lapel ──
-    g.fillStyle(0x242432);
-    g.fillTriangle(13, 12, 19, 18, 13, 22);
-
-    // ── right lapel ──
-    g.fillStyle(0x242432);
-    g.fillTriangle(22, 12, 16, 18, 22, 22);
-
-    // ── white shirt / collar ──
-    g.fillStyle(0xdedec8);
-    g.fillRect(15, 14, 9, 12);
-
-    // ── black tie ──
-    g.fillStyle(0x080808);
-    g.fillRect(17, 13, 5, 12);
-    // tie knot (wider at top)
-    g.fillStyle(0x101010);
-    g.fillRect(16, 13, 7, 4);
-
-    // ── HEAD — dark hair circle, centered on aim axis y=20 ──
-    g.fillStyle(0x1a100a);
-    g.fillCircle(27, 20, 11);
-
-    // ── hair shine / parting ──
-    g.fillStyle(0x261810);
-    g.fillEllipse(25, 18, 14, 9);
-
-    // ── skin (right cheek/chin visible from above) ──
-    g.fillStyle(0xaa6e38);
-    g.fillEllipse(32, 20, 7, 9);
-
-    // ── stubble / jaw shadow ──
-    g.fillStyle(0x7a4e28, 0.5);
-    g.fillEllipse(33, 21, 5, 6);
-
-    // ── right arm — suit sleeve ──
-    g.fillStyle(0x1c1c26);
-    g.fillRect(33, 18, 11, 5);
-
-    // ── hand ──
-    g.fillStyle(0xaa6e38);
-    g.fillRect(43, 19, 7, 4);
-
-    // ── GLOCK 17 — facing right, centered on y=20 ──
-    // grip (below center)
-    g.fillStyle(0x0e0e18);
-    g.fillRect(47, 22, 9, 10);
-    // grip texture
-    g.fillStyle(0x080810);
-    g.fillRect(48, 24, 2, 7);
-    g.fillRect(51, 24, 2, 7);
-    g.fillRect(54, 24, 2, 7);
-    // frame
-    g.fillStyle(0x141420);
-    g.fillRect(46, 17, 18, 9);
-    // slide (upper, lighter)
-    g.fillStyle(0x1e1e2c);
-    g.fillRect(46, 17, 14, 5);
-    // slide serrations
-    g.fillStyle(0x161622);
-    g.fillRect(47, 17, 2, 5);
-    g.fillRect(50, 17, 2, 5);
-    g.fillRect(53, 17, 2, 5);
-    // trigger guard
-    g.fillStyle(0x141420);
-    g.fillRect(51, 21, 8, 6);
-    // barrel
-    g.fillStyle(0x090912);
-    g.fillRect(57, 18, 6, 4);
-    // front sight (tiny bright dot)
-    g.fillStyle(0xffffff);
-    g.fillRect(61, 17, 1, 1);
-    // muzzle
-    g.fillStyle(0x202030);
-    g.fillRect(62, 18, 2, 4);
-
-    g.generateTexture('player', 64, 40);
-
-    /* ════════════════════════════════════════════════════════════════
-     * ENEMY — Suit Hitman  (56 × 36, top-down)
-     * Origin: setOrigin(0.5, 0.5) → pivot = (28, 18)
-     * Faces RIGHT
-     * ════════════════════════════════════════════════════════════════ */
-    g.clear();
-
-    // ── shadow ──
-    g.fillStyle(0x000000, 0.4);
-    g.fillEllipse(30, 27, 42, 15);
-
-    // ── suit body (dark navy) ──
-    g.fillStyle(0x181826);
-    g.fillEllipse(18, 18, 30, 28);
-
-    // ── suit shading ──
-    g.fillStyle(0x101018);
-    g.fillEllipse(16, 18, 20, 20);
-
-    // ── lapels ──
-    g.fillStyle(0x202030);
-    g.fillTriangle(10, 11, 16, 17, 10, 21);
-    g.fillTriangle(20, 11, 14, 17, 20, 21);
-
-    // ── white shirt ──
-    g.fillStyle(0xd8d8c0);
-    g.fillRect(12, 13, 9, 10);
-
-    // ── red tie ──
-    g.fillStyle(0xaa1111);
-    g.fillRect(14, 12, 5, 11);
-    g.fillStyle(0xcc1818);
-    g.fillRect(14, 12, 5, 3);
-
-    // ── HEAD — dark hair, on aim axis y=18 ──
-    g.fillStyle(0x1c140c);
-    g.fillCircle(25, 18, 10);
-
-    // ── hair shine ──
-    g.fillStyle(0x281e10);
-    g.fillEllipse(23, 16, 13, 8);
-
-    // ── skin (right side) ──
-    g.fillStyle(0xa06432);
-    g.fillEllipse(30, 18, 7, 9);
-
-    // ── arm ──
-    g.fillStyle(0x181826);
-    g.fillRect(31, 16, 9, 5);
-
-    // ── hand ──
-    g.fillStyle(0xa06432);
-    g.fillRect(39, 17, 6, 4);
-
-    // ── compact pistol ──
-    g.fillStyle(0x111118);
-    g.fillRect(43, 15, 14, 8);
-    g.fillStyle(0x181820);
-    g.fillRect(43, 15, 10, 4);
-    g.fillStyle(0x0a0a10);
-    g.fillRect(51, 16, 6, 3);
-    // grip
-    g.fillStyle(0x0e0e16);
-    g.fillRect(44, 21, 7, 8);
-    // muzzle
-    g.fillStyle(0x1e1e28);
-    g.fillRect(55, 16, 2, 3);
-
-    g.generateTexture('enemy', 56, 36);
-
-    /* ════════════════════════════════════════════════════════════════
-     * ENEMY ELITE — Heavy Hitman  (60 × 38, top-down)
-     * Origin: setOrigin(0.5, 0.5) → pivot = (30, 19)
-     * ════════════════════════════════════════════════════════════════ */
-    g.clear();
-
-    // ── shadow ──
-    g.fillStyle(0x000000, 0.5);
-    g.fillEllipse(32, 30, 48, 16);
-
-    // ── suit body (deep black) ──
-    g.fillStyle(0x10101a);
-    g.fillEllipse(19, 19, 34, 32);
-
-    // ── suit shading ──
-    g.fillStyle(0x0a0a12);
-    g.fillEllipse(17, 19, 24, 24);
-
-    // ── lapels (slightly purple tint = elite) ──
-    g.fillStyle(0x18102a);
-    g.fillTriangle(10, 11, 17, 18, 10, 24);
-    g.fillTriangle(22, 11, 15, 18, 22, 24);
-
-    // ── white shirt ──
-    g.fillStyle(0xd0d0b8);
-    g.fillRect(11, 13, 10, 12);
-
-    // ── purple tie (elite identifier) ──
-    g.fillStyle(0x6600aa);
-    g.fillRect(14, 12, 5, 13);
-    g.fillStyle(0x8800cc);
-    g.fillRect(14, 12, 5, 4);
-
-    // ── pocket square (elite badge) ──
-    g.fillStyle(0x9900dd);
-    g.fillTriangle(10, 15, 13, 15, 10, 19);
-
-    // ── HEAD — larger, heavier ──
-    g.fillStyle(0x140e08);
-    g.fillCircle(27, 19, 12);
-
-    // ── hair ──
-    g.fillStyle(0x1e160c);
-    g.fillEllipse(25, 17, 16, 10);
-
-    // ── skin ──
-    g.fillStyle(0x986030);
-    g.fillEllipse(33, 19, 8, 11);
-
-    // ── thick arm (heavier build) ──
-    g.fillStyle(0x10101a);
-    g.fillRect(34, 16, 11, 7);
-
-    // ── hand ──
-    g.fillStyle(0x986030);
-    g.fillRect(44, 18, 7, 4);
-
-    // ── SUBMACHINE GUN (longer) ──
-    // receiver
-    g.fillStyle(0x0e0e18);
-    g.fillRect(48, 14, 22, 10);
-    // top rail
-    g.fillStyle(0x161622);
-    g.fillRect(48, 14, 18, 4);
-    // side marks
-    g.fillStyle(0x0a0a14);
-    g.fillRect(49, 14, 2, 4);
-    g.fillRect(52, 14, 2, 4);
-    g.fillRect(55, 14, 2, 4);
-    // grip
-    g.fillStyle(0x0c0c16);
-    g.fillRect(49, 22, 9, 10);
-    // barrel extension
-    g.fillStyle(0x080810);
-    g.fillRect(62, 16, 8, 5);
-    // purple highlight on barrel (elite weapon)
-    g.fillStyle(0x440066);
-    g.fillRect(62, 16, 8, 2);
-    // muzzle
-    g.fillStyle(0x1a1a26);
-    g.fillRect(68, 17, 2, 4);
-
-    g.generateTexture('enemy_elite', 70, 38);
-
-    /* ════════════════════════════════════════════════════════════════
-     * FLOOR TILE — warm stone / marble  (64 × 64)
-     * ════════════════════════════════════════════════════════════════ */
-    g.clear();
-
-    // base stone colour
-    g.fillStyle(0x18150f);
-    g.fillRect(0, 0, 64, 64);
-
-    // subtle inner quad (slight colour variation for marble look)
-    g.fillStyle(0x1c1910);
-    g.fillRect(2, 2, 60, 60);
-
-    // diagonal veins (light marble lines)
-    g.lineStyle(1, 0x221e14, 0.6);
-    g.lineBetween(0, 16, 16, 0);
-    g.lineBetween(0, 48, 48, 0);
-    g.lineBetween(16, 64, 64, 16);
-    g.lineBetween(48, 64, 64, 48);
-
-    // grout / edge border
-    g.lineStyle(1, 0x0e0c08, 1);
-    g.strokeRect(0, 0, 64, 64);
-
+    g.fillStyle(0x181410); g.fillRect(0,0,64,64);
+    g.fillStyle(0x201a14,0.6); g.fillRect(3,3,40,30);
+    g.lineStyle(1,0xC8960C,0.22); g.lineBetween(4,18,46,60);
+    g.lineStyle(1,0xA87828,0.14); g.lineBetween(18,4,60,46);
+    g.fillStyle(0x080604);
+    g.fillRect(0,0,64,2); g.fillRect(0,0,2,64);
+    g.fillRect(62,0,2,64); g.fillRect(0,62,64,2);
+    g.fillStyle(0xC8960C,0.6);
+    g.fillRect(0,0,3,3); g.fillRect(61,0,3,3);
+    g.fillRect(0,61,3,3); g.fillRect(61,61,3,3);
     g.generateTexture('floor_tile', 64, 64);
 
-    /* ── column (stone pillar top-view, 52×52) ── */
     g.clear();
-    // outer shadow ring
-    g.fillStyle(0x000000, 0.45);
-    g.fillCircle(28, 30, 26);
-    // stone base
-    g.fillStyle(0x2a2318);
-    g.fillCircle(26, 26, 25);
-    // middle ring
-    g.fillStyle(0x322b1e);
-    g.fillCircle(26, 26, 19);
-    // inner cap (top of column)
-    g.fillStyle(0x3c3326);
-    g.fillCircle(26, 26, 13);
-    // highlight
-    g.fillStyle(0x46402e);
-    g.fillCircle(23, 23, 7);
-    // outer rim line
-    g.lineStyle(1.5, 0xaa8844, 0.5);
-    g.strokeCircle(26, 26, 24);
-    // inner rim
-    g.lineStyle(1, 0x887040, 0.4);
-    g.strokeCircle(26, 26, 18);
+    g.fillStyle(0x000000,0.55); g.fillCircle(27,29,26);
+    g.fillStyle(0x706050);      g.fillCircle(26,26,25);
+    g.fillStyle(0x585040);      g.fillCircle(26,26,21);
+    g.fillStyle(0x403830);      g.fillCircle(26,26,15);
+    g.fillStyle(0x282018);      g.fillCircle(26,26,9);
+    g.fillStyle(0x181008);      g.fillCircle(26,26,4);
+    g.lineStyle(1,0xC8960C,0.22); g.lineBetween(14,6,38,46);
+    g.lineStyle(1,0x9E7A40,0.14); g.lineBetween(6,22,46,34);
+    g.lineStyle(2.5,0xC8960C,0.9); g.strokeCircle(26,26,23);
+    g.lineStyle(1,0xC8960C,0.45);  g.strokeCircle(26,26,17);
+    g.fillStyle(0x907060,0.35); g.fillEllipse(21,19,16,11);
     g.generateTexture('pillar', 52, 52);
 
     g.destroy();
 
-    /* ── loading bar ── */
-    const bar = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50, 0, 3, C.AMBER);
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 30, 'AGENT 404', {
-      fontFamily: 'Share Tech Mono', fontSize: '28px', color: '#FFB800', letterSpacing: 10,
+    const bar = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2+50, 0, 3, C.AMBER);
+    this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2-30, 'AGENT 404', {
+      fontFamily:'Share Tech Mono', fontSize:'28px', color:'#C8960C', letterSpacing:10,
     }).setOrigin(0.5);
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 10, 'INITIALIZING . . .', {
-      fontFamily: 'Share Tech Mono', fontSize: '11px', color: '#444', letterSpacing: 4,
+    this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2+10, 'INITIALIZING . . .', {
+      fontFamily:'Share Tech Mono', fontSize:'11px', color:'#6B4A04', letterSpacing:4,
     }).setOrigin(0.5);
     this.tweens.add({
       targets: bar, width: 300, duration: 700, ease: 'Quad.Out',

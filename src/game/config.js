@@ -11,23 +11,24 @@ export const ENEMY_HP = 2;
 export const ELITE_HP = 4;
 
 export const C = {
-  DARK:       0x080810,
-  FLOOR:      0x0d0d16,
-  FLOOR_ALT:  0x0f0f1a,
-  WALL:       0x14141e,
-  WALL_EDGE:  0x1e1e2e,
-  AMBER:      0xFFB800,
-  AMBER_DIM:  0x806000,
-  CYAN:       0x00FFFF,
-  RED:        0xFF3333,
-  GREEN:      0x00FF88,
-  PLAYER_COL: 0x0d0d18,
-  ENEMY_COL:  0x200808,
-  ELITE_COL:  0x180820,
-  OBSTACLE:   0x161620,
-  OBS_EDGE:   0x20202e,
-  DOOR_LOCK:  0xFF3333,
-  DOOR_OPEN:  0x00FF88,
+  DARK:       0x0a0805,   // deep warm black
+  FLOOR:      0x0d0b09,   // dark warm marble A
+  FLOOR_ALT:  0x110f0c,   // dark warm marble B
+  WALL:       0x0c0806,   // dark mahogany
+  WALL_EDGE:  0x1e1208,   // mahogany edge
+  AMBER:      0xC8960C,   // primary = rich gold
+  AMBER_DIM:  0x6B4A04,
+  CYAN:       0x8B1020,   // secondary = deep burgundy
+  RED:        0xCC1122,
+  GREEN:      0xD4A520,   // door open = bright gold
+  PURPLE:     0x7B1FA2,   // elite accent
+  PLAYER_COL: 0x08080a,
+  ENEMY_COL:  0x0d0808,
+  ELITE_COL:  0x0d0808,
+  OBSTACLE:   0x1a0e08,
+  OBS_EDGE:   0x2a1810,
+  DOOR_LOCK:  0xAA1020,   // blood red locked
+  DOOR_OPEN:  0xC8960C,   // gold open
 };
 
 export const ROOM_CONFIGS = [
