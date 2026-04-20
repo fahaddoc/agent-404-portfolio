@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AGENT 404 — Shah Fahad</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+    }
+    #game-container { position: relative; }
+    #game-container canvas { display: block; }
+
+    /* Modal overlay (dark tint behind modal) */
+    #modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 50;
+      display: none;
+    }
+    #modal-overlay.active { display: block; }
+
+    /* Classified document modal */
+    #classified-modal {
+      position: fixed;
+      top: 0; right: 0;
+      width: 440px;
+      height: 100vh;
+      background: #080810;
+      border-left: 2px solid #FFB800;
+      z-index: 51;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+    }
+    #classified-modal.active { transform: translateX(0); }
+
+    #modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: transparent;
+      border: 1px solid #FFB800;
+      color: #FFB800;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    #modal-close:hover { background: #FFB800; color: #080810; }
+
+    #modal-inner {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px 24px;
+      scrollbar-width: thin;
+      scrollbar-color: #FFB800 #111;
+    }
+    #modal-inner::-webkit-scrollbar { width: 4px; }
+    #modal-inner::-webkit-scrollbar-track { background: #111; }
+    #modal-inner::-webkit-scrollbar-thumb { background: #FFB800; }
+
+    .modal-stamp {
+      color: #FFB800;
+      font-size: 9px;
+      letter-spacing: 5px;
+      margin-bottom: 4px;
+      opacity: 0.7;
+    }
+    .modal-title {
+      color: #FFB800;
+      font-size: 18px;
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(255,184,0,0.3);
+      padding-bottom: 12px;
+    }
+    .modal-subtitle {
+      color: #555;
+      font-size: 10px;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+    .section-label {
+      color: #FFB800;
+      font-size: 10px;
+      letter-spacing: 3px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+    .bio-text {
+      color: #aaa;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .stat-box {
+      background: rgba(255,184,0,0.04);
+      border: 1px solid rgba(255,184,0,0.15);
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-num { color: #FFB800; font-size: 24px; display: block; }
+    .stat-lbl { color: #555; font-size: 9px; letter-spacing: 2px; }
+    .skill-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .skill-tag {
+      background: rgba(0,255,255,0.04);
+      border: 1px solid rgba(0,255,255,0.25);
+      color: #00FFFF;
+      font-size: 10px;
+      padding: 4px 9px;
+      letter-spacing: 1px;
+    }
+    .project-card {
+      border-left: 3px solid #FFB800;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      background: rgba(255,184,0,0.02);
+    }
+    .project-name { color: #FFB800; font-size: 13px; margin-bottom: 4px; }
+    .project-company { color: #555; font-size: 10px; letter-spacing: 1px; margin-bottom: 6px; }
+    .project-desc { color: #888; font-size: 11px; line-height: 1.7; }
+    .exp-item {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,184,0,0.08);
+    }
+    .exp-item:last-child { border-bottom: none; }
+    .exp-company { color: #FFB800; font-size: 13px; }
+    .exp-role { color: #00FFFF; font-size: 11px; margin: 2px 0; }
+    .exp-period { color: #444; font-size: 10px; margin-bottom: 6px; }
+    .exp-desc { color: #888; font-size: 11px; line-height: 1.7; }
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px;
+      border: 1px solid rgba(255,184,0,0.1);
+      margin-bottom: 8px;
+      transition: border-color 0.2s;
+    }
+    .contact-row:hover { border-color: rgba(255,184,0,0.4); }
+    .contact-key { color: #444; font-size: 9px; letter-spacing: 2px; min-width: 64px; }
+    .contact-val {
+      color: #00FFFF;
+      font-size: 12px;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .contact-val:hover { color: #FFB800; }
+    .redact { background: #222; height: 8px; border-radius: 1px; margin: 5px 0; }
+    .mission-complete {
+      text-align: center;
+      padding: 20px;
+      margin-top: 16px;
+      border: 1px solid rgba(0,255,136,0.3);
+      background: rgba(0,255,136,0.03);
+    }
+    .mission-complete-text { color: #00FF88; font-size: 14px; letter-spacing: 3px; }
+
+    /* Controls hint */
+    #controls-hint {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,184,0,0.4);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <div id="modal-overlay"></div>
+  <div id="classified-modal">
+    <button id="modal-close">[ ESC ] CLOSE FILE</button>
+    <div id="modal-inner"></div>
+  </div>
+  <div id="controls-hint">WASD — MOVE &nbsp;|&nbsp; MOUSE — AIM &nbsp;|&nbsp; CLICK — FIRE</div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
